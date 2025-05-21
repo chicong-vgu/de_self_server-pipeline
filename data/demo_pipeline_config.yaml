@@ -1,0 +1,17 @@
+pipeline:
+  name: demo_pipeline
+  source:
+    type: csv
+    path: /opt/airflow/data/demo_data.csv
+  transformations:
+    - type: filter
+      column: age
+      condition: "> 18"
+    - type: aggregate
+      group_by: department
+      metric: salary
+      function: sum
+  destination:
+    type: postgres
+    table: output_table
+    connection: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
