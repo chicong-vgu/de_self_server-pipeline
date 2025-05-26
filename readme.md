@@ -89,9 +89,6 @@ mkdir -p great_expectations/checkpoints
 volumes:
   - ./great_expectations:/opt/airflow/great_expectations
 ```
-7. Initialize Great Expectations ben trong container airflow webserver
-```bash
-great_expectations --v3-api init
 ```
 
 
@@ -100,3 +97,30 @@ great_expectations --v3-api init
 ```shell
 docker compose logs airflow-webserver
 ```
+
+
+
+
+
+
+### Error
+why aiflow dags list-import-errors has found no errrors but on the airflow UI still display 
+--> must install version pydantic correctly 2.8.2 ( built in docker file aalready to fix)
+```sh
+ "Broken DAG: [/opt/airflow/dags/demo_pipeline.py] Traceback (most recent call last): File "/home/airflow/.local/lib/python3.12/site-packages/pydantic/v1/typing.py", line 520, in update_field_forward_refs field.type_ = evaluate_forwardref(field.type_, globalns, localns or None) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/home/airflow/.local/lib/python3.12/site-packages/pydantic/v1/typing.py", line 66, in evaluate_forwardref return cast(Any, type_)._evaluate(globalns, localns, set()) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ TypeError: ForwardRef._evaluate() missing 1 required keyword-only argument: 'recursive_guard'"
+ ```
+
+
+
+### Check dag in airlow server
+
+```sh
+airflow dags list
+airflow dags list-import-errors
+```
+
+check data in postgres
+```sql
+select * from output_table; 
+```
+-- output_table trong /Users/chicong/Study/DE_self-serve_pipeline/data/demo_pipeline_config.yaml
