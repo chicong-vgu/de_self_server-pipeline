@@ -4,10 +4,31 @@ from datetime import datetime
 import yaml
 import pandas as pd
 import sqlalchemy
+import great_expectations as gx
+# from great_expectations.data_context import FileDataContext
+# from great_expectations.dataset import PandasDataset
+# from great_expectations.core.batch import BatchRequest
+import os
 
 def load_config(config_path):
     with open(config_path, 'r') as file:
         return yaml.safe_load(file)
+
+def validate_data(**kwargs):
+    config = load_config(kwargs['config_path'])
+    data_path = config['pipeline']['source']['path']
+    context = gx.get_context(mode="file", project_root_dir='/opt/airflow/great_expectations')
+
+    preset_expectation = gx.expectations.ExpectColumnMaxToBeBetween(column="age", min_value=28, max_value=40)
+
+    #Data source
+
+    sample_batch = context.data_sources.pandas_default.read_csv(data_path)
+
+    validation_results = sample_batch.validate(preset_expectation)
+    
+    if not validation_results['success']:
+        raise ValueError("Data validation failed: " + str(validation_results['result']))
 
 def process_data(**kwargs):
     config = load_config(kwargs['config_path'])
@@ -17,9 +38,7 @@ def process_data(**kwargs):
     # Apply transformations
     for t in config['pipeline']['transformations']:
         if t['type'] == 'filter':
-            print('condition is ', t['condition'])
-            # df = df.query(t['condition'])
-            df = df.query(f"{t['column']} {t['condition']}")
+            df = df.query(t['column'] + t['condition'])
         elif t['type'] == 'aggregate':
             df = df.groupby(t['group_by'])[t['metric']].agg(t['function']).reset_index()
     
@@ -30,11 +49,18 @@ def process_data(**kwargs):
 with DAG(
     'demo_pipeline',
     start_date=datetime(2025, 5, 20),
-    schedule_interval=None,
+    schedule=None,
     catchup=False
 ) as dag:
+    validate_task = PythonOperator(
+        task_id='validate_data',
+        python_callable=validate_data,
+        op_kwargs={'config_path': '/opt/airflow/data/demo_pipeline_config.yaml'}
+    )
+    
     process_task = PythonOperator(
         task_id='process_data',
         python_callable=process_data,
         op_kwargs={'config_path': '/opt/airflow/data/demo_pipeline_config.yaml'}
     )
+    validate_task >> process_task
