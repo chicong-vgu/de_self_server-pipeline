@@ -16,7 +16,7 @@ services:
       retries: 5
 
   airflow-webserver:
-    image: apache/airflow:2.9.2
+    image: custom-airflow:2.9.2
     depends_on:
       - postgres
     environment:
@@ -29,13 +29,14 @@ services:
       - ./data:/opt/airflow/data
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
+      - ./great_expectations:/opt/airflow/great_expectations
       - ./entrypoint-webserver.sh:/entrypoint-webserver.sh
     ports:
       - "8080:8080"
     entrypoint: /entrypoint-webserver.sh
 
   airflow-scheduler:
-    image: apache/airflow:2.9.2
+    image: custom-airflow:2.9.2
     depends_on:
       - postgres
     environment:
@@ -48,6 +49,7 @@ services:
       - ./data:/opt/airflow/data
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
+      - ./great_expectations:/opt/airflow/great_expectations
       - ./entrypoint-scheduler.sh:/entrypoint-scheduler.sh
     entrypoint: /entrypoint-scheduler.sh
 
